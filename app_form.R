@@ -1,16 +1,18 @@
 library(shiny)
 library(tidyverse)
 library(rdrop2)
+library(shinyjs)
+library(shinyalert)
 
 outputDir <- "responses"
 
 saveData <- function(data) {
   data <- t(data)
   # Create a unique file name
-  fileName <- sprintf("%s_%s.csv", as.integer(Sys.time()), digest::digest(data))
+  fileName <- sprintf("%s_%s.txt", as.integer(Sys.time()), digest::digest(data))
   # Write the data to a temporary file locally
   filePath <- file.path(tempdir(), fileName)
-  write.csv(data, filePath, row.names = FALSE, quote = TRUE)
+  write.table(data, filePath, row.names = FALSE, quote = FALSE, sep = "|")
   # Upload the file to Dropbox
   drop_upload(filePath, path = outputDir)
 }
@@ -26,10 +28,13 @@ fields <- c("name1", "name2", "email", "twitter","twitter10", "github", "github1
 # Shiny app with 3 fields that the user can submit data for
 shinyApp(
   ui = fluidPage(
+    shinyjs::useShinyjs(),
+    shinyalert::useShinyalert(),
+    div(id = "form", list(
     tags$style(".form-group.shiny-input-container { width: 600px; }"),
     img(src='logo.png', align = "left", height = "200px"), br(),br(),
     titlePanel("Chicago R Unconference Application"),
-    column(10,offset=1,div(style = "height:250px;",
+    column(10, offset=1, div(style = "height:250px;",
     DT::dataTableOutput("responses", width = 300), tags$hr(),
     textInput("name1", "First Name", "", width = "400px"),
     textInput("name2", "Last Name", "", width = "400px"),
@@ -137,16 +142,17 @@ shinyApp(
     p("Please read the Code of Conduct for this event, which can be found",
        a("here.", href="https://chirunconf.github.io/coc/"),
        " Do you agree with the terms and conditions?", style = "font-weight: bold; margin:0; line-height: 0px;"),
-    radioButtons("codeofconduct", label = "", 
-                 choices = c("I agree", "I do not agree"), selected = character(0)), 
+    checkboxInput("codeofconduct", label = "I agree", value = FALSE), 
     br(),
     h4("Submit application below:"),
     actionButton("submit", "Submit"),
     br(),
     br(),
     br(),
-    br()
-  ))),
+    br(),
+    br()))))
+  ),
+  
   server = function(input, output, session) {
     
     # Whenever a field is filled, aggregate all form data
@@ -157,8 +163,24 @@ shinyApp(
     
     # When the Submit button is clicked, save the form data
     observeEvent(input$submit, {
-      saveData(formData())
+      
+      if (!input$codeofconduct) {
+        shinyalert(
+          title = "",
+          text = "You must respond to the Code of Conduct.",
+          type = "error"
+        )
+        return(NULL)
+      } else {
+        saveData(formData())
+        shinyjs::reset("form")
+        shinyalert(
+          title = "",
+          text = "Thanks! We have received your application.",
+          type = "success"
+        )
+      }
+      
     })
-    
   }
 )
