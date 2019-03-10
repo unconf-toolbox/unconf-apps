@@ -16,13 +16,17 @@ saveData <- function(data) {
 }
 
 # Define the fields we want to save from the form
-fields <- c("name1", "name2", "email", "twitter", "github", "blog", "linkedin",
-            "other", "background", "experience", "industry", "attended",
-            "relevant", "experience2", "accomplishments", "Interests","why", "why2")
+fields <- c("name1", "name2", "email", "twitter","twitter10", "github", "github10",
+            "blog", "blog10", "linkedin", "linkedin10", "other", "other10",
+            "experience", "expother", "industry", "attended", "relevant", "relevantother",
+            "experience2", "exp2other", "accomplishments", "why", "why2", "magnify",
+            "experience3", "exp3other", "condition", "diversity", "diversity2", "travel",
+            "travel2", "codeofconduct")
 
 # Shiny app with 3 fields that the user can submit data for
 shinyApp(
   ui = fluidPage(
+    tags$style(".form-group.shiny-input-container { width: 600px; }"),
     img(src='logo.png', align = "left", height = "200px"), br(),br(),
     titlePanel("Chicago R Unconference Application"),
     column(10,offset=1,div(style = "height:250px;",
@@ -30,6 +34,9 @@ shinyApp(
     textInput("name1", "First Name", "", width = "400px"),
     textInput("name2", "Last Name", "", width = "400px"),
     textInput("email", "Email", "", width = "400px"),
+    br(),
+    
+    #ONLINE/LINKS
     h2("Online Presence"),
     h5("Please provide any relevant social media account information that you 
        would like to help us gauge your involvement in the R community. 
@@ -44,6 +51,9 @@ shinyApp(
     conditionalPanel(condition = "input.linkedin10 == 'Yes'", textInput("linkedin", "LinkedIn URL:", "")),
     radioButtons("other10", "Any other links?", choices = c("Yes","No"), selected = character(0)), 
     conditionalPanel(condition = "input.other10 == 'Yes'", textInput("other", "Any other links:", "")),
+    br(),
+    
+    #BACKGROUND
     h2("Background"),
     radioButtons("experience", "What is your current occupation?", 
                  choices = c("Undergraduate student", "Masters student", "Doctoral student",
@@ -59,23 +69,27 @@ shinyApp(
                                    "I have used R for personal projects", "I have used R for work in industry",
                                    "I have used R for work in government", "I have used R for work in a nonprofit",
                                    "Other"), selected = NULL),
-    conditionalPanel(condition = "input.relevant == 'Other'", textInput("relevantother", "Please describe:", "")),
+    conditionalPanel(condition = "input.relevant.includes('Other')", 
+                     textInput("relevantother", "Please describe:", "")),
     checkboxGroupInput("experience2", "Please check the box to indicate experience with any of the following:", 
                        choices = c("Used git individually", "Used git to collaborate with others",
                                    "Used a web-based version control site (e.g. Github, Gitlab, BitBucket) individually", 
                                    "Used a web-based version control site (e.g. Github, Gitlab, BitBucket) to collaborate with others",
-                                   #"Made an open-source contribution to an existing project on GitHub",
-                                   #"Written an R script",
-                                   #"Made an R project",
+                                   "Made an open-source contribution to an existing project on GitHub",
+                                   "Written an R script",
+                                   "Made an R project",
                                    "Developed an R package for personal use",
                                    "Release an R package publicly",
                                    "Written unit tests for an R package",
                                    "Taught or helped others to do any or all of the above",
                                    "Other"), selected = NULL),
-    conditionalPanel(condition = "input.experience2 == 'Other'", textInput("exp2other", "Please describe:", "")),
+    conditionalPanel(condition = "input.experience2.includes('Other')", textInput("exp2other", "Please describe:", "")),
     textAreaInput("accomplishments", "Briefly describe any personal or community-related R accomplishment that 
               you are most proud of. If possible, please include any relevant links.", "", 
                   width = "600px", resize = "vertical"),
+    br(),
+    
+    #INTERESTS
     h2("Interests"),
     textAreaInput("why", "Why do you want to attend this unconf?", "", width = "600px"),
     # h5("Describe what you see as your long-term goals, and how will attending this unconf help you reach them."),
@@ -89,7 +103,10 @@ shinyApp(
                                    "Code contribution to existing open-source project", 
                                    "Preliminary development of new package",
                                    "Other"), selected = NULL),
-    conditionalPanel(condition = "input.experience3 == 'Other'", textInput("exp3other", "Please describe:", "")),
+    conditionalPanel(condition = "input.experience3.includes('Other')", textInput("exp3other", "Please describe:", "")),
+    br(),
+    
+    #CONDITIONS
     h2("Conditions"),
     radioButtons("condition", "We intend to maintain a strong social media presence (e.g. Twitter) 
                  throughout the unconf, including sharing photos and videos. Do we have your 
@@ -109,16 +126,26 @@ shinyApp(
                   the groups you identify as a member of above.",
                   "", width = "600px")),
     radioButtons("travel", "Do you need travel support to attend this unconf?", 
-                 choices = c("Yes, I'll need travel and lodging", "Just travel", "Just lodging",
+                 choices = c("Yes, I will need travel and lodging", "Just travel", "Just lodging",
                              "I don't need any support"), selected = character(0)),
     #not working?
-    conditionalPanel(condition = "input.travel == 'Yes, I'll need travel and lodging' || input.travel == 'Just travel' || input.travel == 'Just lodging'",
+    conditionalPanel(condition = "input.travel == 'Yes, I will need travel and lodging' || input.travel == 'Just travel' || input.travel == 'Just lodging'",
                      textAreaInput("travel2", "If you require travel support, please provide a line-item summary of your costs.",
                                    "", width = "600px")),
-    radioButtons("codeofconduct", "Please read the Code of Conduct for this event, which can be found 
-                 at https://chirunconf.github.io/coc/. Do you agree with the terms and conditions?", 
+    br(),
+    br(),
+    p("Please read the Code of Conduct for this event, which can be found",
+       a("here.", href="https://chirunconf.github.io/coc/"),
+       " Do you agree with the terms and conditions?", style = "font-weight: bold; margin:0; line-height: 0px;"),
+    radioButtons("codeofconduct", label = "", 
                  choices = c("I agree", "I do not agree"), selected = character(0)), 
-    actionButton("submit", "Submit")
+    br(),
+    h4("Submit application below:"),
+    actionButton("submit", "Submit"),
+    br(),
+    br(),
+    br(),
+    br()
   ))),
   server = function(input, output, session) {
     
@@ -132,6 +159,6 @@ shinyApp(
     observeEvent(input$submit, {
       saveData(formData())
     })
-
+    
   }
 )
